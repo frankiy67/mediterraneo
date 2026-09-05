@@ -47,16 +47,18 @@ export async function fetchGoals(userId) {
   }
   return {
     kcal: data.kcal, protein: data.protein, carbs: data.carbs, fat: data.fat,
-    fiber: data.fiber, sugar: data.sugar, water: data.water,
+    fiber: data.fiber, sugar: data.sugar,
     targetWeight: Number(data.target_weight)
   };
 }
 
 export async function saveGoals(userId, g) {
+  // La colonne `water` reste en base avec sa valeur : l'application ne suit
+  // plus l'hydratation, ce n'est pas une raison pour effacer l'historique.
   const { error } = await supabase.from('goals').upsert({
     user_id: userId,
     kcal: g.kcal, protein: g.protein, carbs: g.carbs, fat: g.fat,
-    fiber: g.fiber, sugar: g.sugar, water: g.water,
+    fiber: g.fiber, sugar: g.sugar,
     target_weight: g.targetWeight, updated_at: new Date().toISOString()
   });
   if (error) throw error;
@@ -67,7 +69,8 @@ export async function saveGoals(userId, g) {
 const toMeal = r => ({
   id: r.id, date: r.date, time: r.time, type: r.type, desc: r.description,
   kcal: r.kcal, protein: r.protein, carbs: r.carbs, fat: r.fat,
-  fiber: r.fiber, sugar: r.sugar, caffeine: r.caffeine, isSupplement: r.is_supplement
+  fiber: r.fiber, sugar: r.sugar, caffeine: r.caffeine,
+  isSupplement: r.is_supplement, barcode: r.barcode || ''
 });
 
 export async function fetchMeals(userId, fromDate) {
@@ -83,7 +86,7 @@ export async function insertMeal(userId, m) {
     user_id: userId, date: m.date, time: m.time, type: m.type,
     description: m.desc, kcal: m.kcal, protein: m.protein, carbs: m.carbs,
     fat: m.fat, fiber: m.fiber, sugar: m.sugar, caffeine: m.caffeine,
-    is_supplement: !!m.isSupplement
+    is_supplement: !!m.isSupplement, barcode: m.barcode || null
   }).select().single();
   if (error) throw error;
   return toMeal(data);
@@ -94,19 +97,32 @@ export async function deleteMeal(id) {
   if (error) throw error;
 }
 
-/* ── eau ─────────────────────────────────────── */
+/* ── séances de sport ────────────────────────── */
 
-export async function fetchWater(userId, fromDate) {
-  let q = supabase.from('water').select('*').eq('user_id', userId);
+const toSession = r => ({
+  id: r.id, date: r.date, time: r.time, kind: r.kind,
+  label: r.label, minutes: r.minutes, kcal: r.kcal
+});
+
+export async function fetchSessions(userId, fromDate) {
+  let q = supabase.from('sessions').select('*').eq('user_id', userId).order('date', { ascending: true });
   if (fromDate) q = q.gte('date', fromDate);
   const { data, error } = await q;
   if (error) throw error;
-  return data.map(r => ({ date: r.date, ml: r.ml }));
+  return data.map(toSession);
 }
 
-export async function setWater(userId, date, ml) {
-  const { error } = await supabase.from('water')
-    .upsert({ user_id: userId, date, ml }, { onConflict: 'user_id,date' });
+export async function insertSession(userId, s) {
+  const { data, error } = await supabase.from('sessions').insert({
+    user_id: userId, date: s.date, time: s.time, kind: s.kind,
+    label: s.label, minutes: s.minutes, kcal: s.kcal
+  }).select().single();
+  if (error) throw error;
+  return toSession(data);
+}
+
+export async function deleteSession(id) {
+  const { error } = await supabase.from('sessions').delete().eq('id', id);
   if (error) throw error;
 }
 
@@ -152,7 +168,7 @@ export async function setSupplement(userId, date, key, taken) {
  */
 export function subscribeRealtime(userId, fn) {
   const channel = supabase.channel('mediterraneo-sync');
-  for (const table of ['meals', 'water', 'weights', 'supplements', 'goals']) {
+  for (const table of ['meals', 'sessions', 'weights', 'supplements', 'goals']) {
     channel.on('postgres_changes',
       { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` },
       fn);

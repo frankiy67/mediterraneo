@@ -1,17 +1,48 @@
 {
-  "name": "Mediterráneo — suivi nutrition et performance",
+  "name": "Mediterráneo — nutrition, sport et progrès",
   "short_name": "Mediterráneo",
-  "description": "Suivi de nutrition, de poids et d'entraînement. Perdre le gras, garder le muscle.",
+  "description": "Scanne tes aliments, note tes séances, suis ta semaine. Perdre le gras, garder le muscle.",
   "start_url": "./index.html#/today",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#0A1D28",
-  "theme_color": "#0A1D28",
+  "background_color": "#FFFFFF",
+  "theme_color": "#58CC02",
   "lang": "fr",
   "icons": [
-    { "src": "./assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "./assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
-    { "src": "./assets/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+    {
+      "src": "./assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Scanner un produit",
+      "short_name": "Scanner",
+      "url": "./index.html#/scan"
+    },
+    {
+      "name": "Photo du repas",
+      "short_name": "Photo",
+      "url": "./index.html#/photo"
+    },
+    {
+      "name": "Ma semaine",
+      "short_name": "Semaine",
+      "url": "./index.html#/week"
+    }
   ]
 }
