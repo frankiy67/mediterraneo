@@ -18,7 +18,6 @@ export const DEFAULT_GOALS = {
   fat: 80,
   fiber: 30,
   sugar: 55,
-  water: 3000,
   targetWeight: 80
 };
 
@@ -40,15 +39,23 @@ export const SUPPLEMENTS_PW = [
 
 export const ALL_SUPPLEMENTS = [...SUPPLEMENTS_AM, ...SUPPLEMENTS_PW];
 
+/**
+ * Semaine type. `kind` renvoie à une activité de `energy.js`,
+ * `minutes` et `time` servent à préremplir le calendrier.
+ */
 export const WEEK_PLAN = [
-  { day: 'Lundi',    sessions: [{ label: 'Volley 1 h 30',      kind: 'volley' }] },
-  { day: 'Mardi',    sessions: [{ label: 'Gym full-body 1 h',  kind: 'gym'    }] },
-  { day: 'Mercredi', sessions: [{ label: 'Repos',              kind: 'rest'   }] },
-  { day: 'Jeudi',    sessions: [{ label: 'Volley 1 h 30',      kind: 'volley' }] },
-  { day: 'Vendredi', sessions: [{ label: 'Gym full-body 1 h',  kind: 'gym'    }] },
-  { day: 'Samedi',   sessions: [{ label: 'Session libre 2 h',  kind: 'free'   }] },
-  { day: 'Dimanche', sessions: [{ label: 'Session libre 2 h',  kind: 'free'   }] }
+  { day: 'Lundi',    sessions: [{ label: 'Volley',        kind: 'volley', minutes: 90,  time: '19:00' }] },
+  { day: 'Mardi',    sessions: [{ label: 'Gym full-body', kind: 'gym',    minutes: 60,  time: '18:30' }] },
+  { day: 'Mercredi', sessions: [{ label: 'Repos',         kind: 'rest',   minutes: 0,   time: '00:00' }] },
+  { day: 'Jeudi',    sessions: [{ label: 'Volley',        kind: 'volley', minutes: 90,  time: '19:00' }] },
+  { day: 'Vendredi', sessions: [{ label: 'Gym full-body', kind: 'gym',    minutes: 60,  time: '18:30' }] },
+  { day: 'Samedi',   sessions: [{ label: 'Session libre', kind: 'free',   minutes: 120, time: '10:30' }] },
+  { day: 'Dimanche', sessions: [{ label: 'Session libre', kind: 'free',   minutes: 120, time: '10:30' }] }
 ];
+
+/** Séances prévues d'un jour de la semaine, repos exclu. 0 = lundi. */
+export const plannedFor = dayIdx =>
+  (WEEK_PLAN[dayIdx]?.sessions || []).filter(s => s.kind !== 'rest');
 
 export const GYM_SESSION = [
   ['Squat ou presse',               '4 séries de 6 à 8'],
@@ -114,8 +121,21 @@ export const SHOPPING = [
 ];
 
 export const MEAL_TYPES = {
-  breakfast: 'Petit-déjeuner',
-  lunch: 'Déjeuner',
-  dinner: 'Dîner',
-  snack: 'Collation'
+  breakfast: { label: 'Petit-déjeuner', emoji: '🥣', time: '08:30' },
+  lunch:     { label: 'Déjeuner',       emoji: '🥗', time: '13:30' },
+  snack:     { label: 'Collation',      emoji: '🍎', time: '17:00' },
+  dinner:    { label: 'Dîner',          emoji: '🍽️', time: '20:30' }
 };
+
+export const mealType = key => MEAL_TYPES[key] || MEAL_TYPES.snack;
+
+/** Le moment le plus probable au vu de l'heure — un champ de moins à remplir. */
+export function guessMealType(hour = new Date().getHours()) {
+  if (hour < 11) return 'breakfast';
+  if (hour < 16) return 'lunch';
+  if (hour < 18.5) return 'snack';
+  return 'dinner';
+}
+
+/** Quantités proposées d'un geste dans le scanner. */
+export const PORTIONS = [30, 50, 100, 150, 200, 250];

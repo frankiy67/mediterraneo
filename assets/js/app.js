@@ -1,27 +1,32 @@
 /**
  * Point d'entrée : authentification, routage par ancre, synchronisation.
+ * Une route peut porter un paramètre : #/day/2026-09-05
  */
-import { getState, subscribe, setUser, today } from './store.js';
+import { getState, subscribe, setUser, loadAll } from './store.js';
 import { currentUser, onAuthChange, subscribeRealtime } from './data.js';
-import { PROFILE } from './config.js';
 import { authView } from './auth.js';
 import {
-  todayView, journalView, supplementsView, trendsView,
-  weightView, trainingView, planView, settingsView, dataView
+  todayView, weekView, dayView, addView, scanView, journalView, trendsView,
+  weightView, trainingView, planView, supplementsView, settingsView, dataView, moreView
 } from './views.js';
 import { photoView } from './photo.js';
 
 const ROUTES = {
-  today: todayView,
-  photo: photoView,
-  journal: journalView,
-  supplements: supplementsView,
-  trends: trendsView,
-  weight: weightView,
-  training: trainingView,
-  plan: planView,
-  settings: settingsView,
-  data: dataView
+  today: { view: todayView, title: "Aujourd'hui", tab: 'today' },
+  week: { view: weekView, title: 'Ma semaine', tab: 'week' },
+  day: { view: dayView, title: 'Journée', tab: 'week' },
+  add: { view: addView, title: 'Ajouter', tab: 'add' },
+  scan: { view: scanView, title: 'Scanner', tab: 'add' },
+  photo: { view: photoView, title: 'Photo du repas', tab: 'add' },
+  journal: { view: journalView, title: 'Saisie', tab: 'add' },
+  trends: { view: trendsView, title: 'Tendances', tab: 'trends' },
+  weight: { view: weightView, title: 'Poids', tab: 'trends' },
+  training: { view: trainingView, title: 'Entraînement', tab: 'more' },
+  plan: { view: planView, title: 'Menus', tab: 'more' },
+  supplements: { view: supplementsView, title: 'Compléments', tab: 'more' },
+  settings: { view: settingsView, title: 'Objectifs', tab: 'more' },
+  data: { view: dataView, title: 'Données', tab: 'more' },
+  more: { view: moreView, title: 'Plus', tab: 'more' }
 };
 
 const DEFAULT_ROUTE = 'today';
@@ -29,18 +34,26 @@ const main = document.getElementById('main');
 const shell = document.querySelector('.shell');
 
 let unsubscribeRealtime = null;
+let current = null;
 
-function currentRoute() {
-  const name = location.hash.replace(/^#\//, '');
-  return ROUTES[name] ? name : DEFAULT_ROUTE;
+function parseHash() {
+  const [name, param] = location.hash.replace(/^#\/?/, '').split('/');
+  return ROUTES[name] ? { name, param } : { name: DEFAULT_ROUTE, param: undefined };
+}
+
+function leaveCurrent() {
+  current?.unmount?.();
+  current = null;
 }
 
 function render() {
-  const { user, ready } = getState();
+  const { user, ready, error } = getState();
 
   // non connecté : écran d'authentification plein cadre
   if (!user) {
+    leaveCurrent();
     shell.classList.add('signed-out');
+    document.body.classList.add('signed-out');
     main.innerHTML = authView.render();
     authView.mount(main);
     document.title = 'Mediterráneo';
@@ -48,23 +61,34 @@ function render() {
   }
 
   shell.classList.remove('signed-out');
+  document.body.classList.remove('signed-out');
 
   if (!ready) {
-    main.innerHTML = '<p class="empty" style="padding:60px 0">Chargement de tes données…</p>';
+    leaveCurrent();
+    main.innerHTML = '<div class="loading"><i aria-hidden="true"></i>Chargement de tes données…</div>';
     return;
   }
 
-  const name = currentRoute();
-  const view = ROUTES[name];
-  main.innerHTML = view.render();
-  view.mount?.(main);
+  const { name, param } = parseHash();
+  const route = ROUTES[name];
+  const params = { date: param };
 
-  document.querySelectorAll('nav a').forEach(a => {
-    if (a.dataset.route === name) a.setAttribute('aria-current', 'page');
-    else a.removeAttribute('aria-current');
+  if (current && current !== route.view) leaveCurrent();
+  current = route.view;
+
+  main.innerHTML = (error ? `<p class="prose" style="color:var(--red-ink);margin-bottom:12px">⚠️ ${error}</p>` : '')
+    + route.view.render(params);
+  route.view.mount?.(main, params);
+
+  document.querySelectorAll('[data-route]').forEach(link => {
+    if (link.dataset.route === name || link.dataset.route === route.tab) {
+      link.setAttribute('aria-current', 'page');
+    } else {
+      link.removeAttribute('aria-current');
+    }
   });
 
-  document.title = `Mediterráneo — ${name}`;
+  document.title = `Mediterráneo — ${route.title}`;
 }
 
 function handleUser(user) {
@@ -75,22 +99,18 @@ function handleUser(user) {
 
   if (user) {
     // une saisie faite sur un autre appareil rafraîchit celui-ci
-    unsubscribeRealtime = subscribeRealtime(user.id, () => {
-      import('./store.js').then(m => m.loadAll());
-    });
+    unsubscribeRealtime = subscribeRealtime(user.id, () => loadAll());
   }
 }
 
 async function boot() {
-  const sub = document.getElementById('brandSub');
-  if (sub) sub.textContent = `${PROFILE.city} · ${PROFILE.startWeight} → 80 kg`;
-
   window.addEventListener('hashchange', () => {
     render();
     main.focus({ preventScroll: true });
     window.scrollTo({ top: 0 });
   });
 
+  window.addEventListener('rerender', render);
   subscribe(render);
   onAuthChange(handleUser);
 
@@ -101,7 +121,9 @@ async function boot() {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      navigator.serviceWorker.register('./sw.js').catch(() => {
+        /* hors ligne indisponible : l'application fonctionne quand même */
+      });
     });
   }
 }

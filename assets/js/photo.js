@@ -6,20 +6,21 @@
  */
 import { supabase, SUPABASE_URL } from './data.js';
 import { today, addMeal } from './store.js';
-import { esc, toast, fr } from './ui.js';
-import { MEAL_TYPES } from './config.js';
+import { esc, toast, run, fr } from './ui.js';
+import { MEAL_TYPES, guessMealType } from './config.js';
 
 let capture = null;   // { dataUrl, base64, mediaType }
 let result = null;    // estimation renvoyée par la fonction
 
 export const photoView = {
   render() {
+    const chosen = guessMealType();
     const options = Object.entries(MEAL_TYPES)
-      .map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+      .map(([value, meta]) => `<option value="${value}"${value === chosen ? ' selected' : ''}>${meta.emoji} ${meta.label}</option>`).join('');
 
     return `
     <header class="page">
-      <div><h2 class="serif">Photo du repas</h2><p>Prends la photo, corrige si besoin, enregistre</p></div>
+      <div><h2>🍽️ Photo du repas</h2><p>Prends la photo, corrige si besoin, enregistre</p></div>
     </header>
 
     <div class="grid g2">
@@ -31,9 +32,7 @@ export const photoView = {
           ${capture
             ? `<img src="${capture.dataUrl}" alt="Repas photographié">`
             : `<div class="shot-empty">
-                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                   <path d="M3 8h3l2-3h8l2 3h3v11H3z"/><circle cx="12" cy="13" r="3.5"/>
-                 </svg>
+                 <span class="ic" aria-hidden="true">📷</span>
                  <span>Aucune photo pour l'instant</span>
                </div>`}
         </div>
@@ -46,8 +45,8 @@ export const photoView = {
         </div>
 
         <div class="actions">
-          <button class="act" id="btn-shot">${capture ? 'Reprendre' : 'Prendre une photo'}</button>
-          <button class="act ghost" id="btn-analyze" ${capture ? '' : 'disabled'}>Analyser</button>
+          <button class="btn lg" id="btn-shot">📷 ${capture ? 'Reprendre' : 'Prendre une photo'}</button>
+          <button class="btn lg blue" id="btn-analyze" ${capture ? '' : 'disabled'}>Analyser</button>
         </div>
 
         <p class="note">Les valeurs proposées sont des estimations. Corrige-les avant d'enregistrer : une portion mal jugée pèse plus lourd qu'une erreur de calcul.</p>
@@ -57,7 +56,7 @@ export const photoView = {
         ${result ? resultPanel(options) : `
           <h3>Estimation</h3>
           <p class="sub">Elle apparaîtra ici après l'analyse</p>
-          <p class="empty">Prends une photo pour commencer.</p>`}
+          <p class="empty"><span class="ic" aria-hidden="true">✨</span>Prends une photo pour commencer.</p>`}
       </section>
     </div>`;
   },
@@ -118,29 +117,35 @@ export const photoView = {
       const desc = root.querySelector('#r-desc').value.trim();
       if (!desc) { toast('Décris le repas'); return; }
 
-      try {
-        await addMeal({
-          date: today(),
-          time: root.querySelector('#r-time').value || '12:00',
-          type: root.querySelector('#r-type').value,
-          desc,
-          kcal: v('r-kcal'), protein: v('r-protein'), carbs: v('r-carbs'),
-          fat: v('r-fat'), fiber: v('r-fiber'), sugar: v('r-sugar'),
-          caffeine: v('r-caffeine')
-        });
-        capture = null;
-        result = null;
-        toast('Repas enregistré');
-        location.hash = '#/today';
-      } catch {
-        toast('Enregistrement impossible');
-      }
+      const button = root.querySelector('#btn-save');
+      button.disabled = true;
+      const saved = await run(addMeal({
+        date: today(),
+        time: root.querySelector('#r-time').value || '12:00',
+        type: root.querySelector('#r-type').value,
+        desc,
+        kcal: v('r-kcal'), protein: v('r-protein'), carbs: v('r-carbs'),
+        fat: v('r-fat'), fiber: v('r-fiber'), sugar: v('r-sugar'),
+        caffeine: v('r-caffeine')
+      }), { ok: 'Repas enregistré · +10 points' });
+      button.disabled = false;
+      if (!saved) return;
+
+      capture = null;
+      result = null;
+      location.hash = '#/today';
     });
 
     root.querySelector('#btn-discard')?.addEventListener('click', () => {
       result = null;
       rerender();
     });
+  },
+
+  /** Quitter l'écran libère la photo : elle n'a pas à survivre à la vue. */
+  unmount() {
+    capture = null;
+    result = null;
   }
 };
 
@@ -189,8 +194,8 @@ function resultPanel(options) {
     </div>
 
     <div class="actions">
-      <button class="act" id="btn-save">Enregistrer le repas</button>
-      <button class="act ghost" id="btn-discard">Effacer</button>
+      <button class="btn lg wide" id="btn-save">Enregistrer le repas</button>
+      <button class="btn ghost wide" id="btn-discard">Effacer</button>
     </div>
 
     ${r.usage ? `<p class="note">Analyse effectuée — ${fr.format(r.usage.input_tokens || 0)} jetons en entrée, ${fr.format(r.usage.output_tokens || 0)} en sortie, soit moins d'un centime.</p>` : ''}`;

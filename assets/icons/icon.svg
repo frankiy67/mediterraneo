@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Mediterráneo">
-  <rect width="512" height="512" rx="112" fill="#0A1D28"/>
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#17394C" stroke-width="34"/>
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#E8A33D" stroke-width="34"
+  <rect width="512" height="512" rx="112" fill="#58CC02"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#46A302" stroke-width="34"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#FFFFFF" stroke-width="34"
           stroke-linecap="round" stroke-dasharray="942" stroke-dashoffset="330"
           transform="rotate(-90 256 256)"/>
-  <path d="M176 300c40-46 120-46 160 0" fill="none" stroke="#3BB0A0" stroke-width="26" stroke-linecap="round"/>
-  <circle cx="256" cy="212" r="26" fill="#E9F0F0"/>
+  <path d="M176 300c40-46 120-46 160 0" fill="none" stroke="#FFC800" stroke-width="26" stroke-linecap="round"/>
+  <circle cx="256" cy="212" r="26" fill="#FFFFFF"/>
 </svg>

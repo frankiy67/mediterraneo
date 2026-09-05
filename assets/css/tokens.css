@@ -1,37 +1,66 @@
 /* ─────────────────────────────────────────────
    Mediterráneo — jetons de design
-   Palette : nuit méditerranéenne, sel, ambre valencien
+   Clair par défaut, sombre selon le système.
+   Couleurs franches, angles ronds, boutons en relief :
+   une application qu'on a envie d'ouvrir tous les jours.
    ───────────────────────────────────────────── */
 :root{
-  /* fonds */
-  --abyss:#0A1D28;
-  --deep:#112D3D;
-  --surface:#17394C;
+  color-scheme:light dark;
+
+  /* fonds et surfaces */
+  --bg:#FFFFFF;
+  --bg-soft:#F7F9FA;
+  --card:#FFFFFF;
+  --card-soft:#F7F9FA;
+  --overlay:rgba(20,30,35,.45);
 
   /* traits et textes */
-  --line:rgba(180,214,222,.16);
-  --line-strong:rgba(180,214,222,.3);
-  --salt:#E9F0F0;
-  --mist:#9CB4BE;
-  --mist-dim:rgba(156,180,190,.55);
+  --line:#E5E7E8;
+  --line-strong:#D3D8DA;
+  --ink:#3C4142;
+  --ink-soft:#6C7477;
+  --ink-faint:#666E71;
+  --on-color:#FFFFFF;
 
-  /* accents */
-  --amber:#E8A33D;
-  --sea:#3BB0A0;
-  --coral:#E0685C;
-  --violet:#8E7BC4;
+  /* couleurs vives : teinte, ombre portée, fond pâle */
+  --green:#58CC02;      --green-dark:#46A302;   --green-soft:#E8FBD8;
+  --blue:#1CB0F6;       --blue-dark:#1899D6;    --blue-soft:#DDF4FF;
+  --orange:#FF9600;     --orange-dark:#E08600;  --orange-soft:#FFF0DB;
+  --red:#FF4B4B;        --red-dark:#EA2B2B;     --red-soft:#FFE4E4;
+  --purple:#CE82FF;     --purple-dark:#A568CC;  --purple-soft:#F6E9FF;
+  --yellow:#FFC800;     --yellow-dark:#E5A500;  --yellow-soft:#FFF6D6;
+  --teal:#00C2A8;       --teal-dark:#00A18B;    --teal-soft:#D8FAF4;
+
+  /* boutons pleins : assez foncés pour que le texte blanc reste lisible dehors */
+  --btn-green:#3A8500;  --btn-green-deep:#2A6100;
+  --btn-blue:#0F7BAC;   --btn-blue-deep:#0A5A7E;
+  --btn-red:#D42F2F;    --btn-red-deep:#A32020;
+
+  /* encre colorée : la couleur quand elle porte du texte, jamais un aplat */
+  --green-ink:#357A02;
+  --blue-ink:#12729F;
+  --orange-ink:#8A5100;
+  --red-ink:#BC2020;
+  --purple-ink:#7E3FB4;
+  --teal-ink:#006B5C;
+  --yellow-ink:#7A5B00;
+
+  /* rôles */
+  --brand:var(--green);
+  --brand-dark:var(--green-dark);
+  --brand-soft:var(--green-soft);
 
   /* typographie */
-  --f-display:'Instrument Serif',Georgia,'Times New Roman',serif;
-  --f-body:'Outfit',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-body:'Nunito',ui-rounded,'SF Pro Rounded',system-ui,-apple-system,'Segoe UI',sans-serif;
 
-  --t-xs:11.5px;
-  --t-sm:12.5px;
-  --t-md:13.5px;
-  --t-lg:15px;
-  --t-xl:21px;
-  --t-2xl:33px;
-  --t-3xl:76px;
+  --t-xs:12px;
+  --t-sm:13px;
+  --t-md:15px;
+  --t-lg:17px;
+  --t-xl:22px;
+  --t-2xl:28px;
+  --t-3xl:44px;
+  --t-4xl:62px;
 
   /* espacement */
   --s-1:4px;
@@ -43,20 +72,64 @@
   --s-7:42px;
 
   /* rayons */
-  --r-sm:7px;
-  --r-md:11px;
-  --r-lg:16px;
-  --r-xl:20px;
+  --r-sm:10px;
+  --r-md:16px;
+  --r-lg:22px;
+  --r-xl:30px;
+  --r-full:999px;
+
+  /* relief : la bordure basse qui donne le côté « touche » */
+  --lift:4px;
+  --shadow-card:0 2px 0 var(--line);
+  --shadow-float:0 10px 30px rgba(20,40,50,.14);
 
   /* mouvement */
-  --ease:cubic-bezier(.4,0,.2,1);
-  --dur:.45s;
+  --ease:cubic-bezier(.34,1.4,.64,1);
+  --ease-out:cubic-bezier(.2,.7,.3,1);
+  --dur:.35s;
+  --dur-fast:.18s;
 
   /* mise en page */
-  --rail:210px;
-  --measure:1180px;
+  --rail:230px;
+  --measure:960px;
+  --tabbar:74px;
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#131F24;
+    --bg-soft:#0F1A1F;
+    --card:#1B2C33;
+    --card-soft:#22363E;
+    --overlay:rgba(0,0,0,.6);
+
+    --line:#2C4048;
+    --line-strong:#3A5460;
+    --ink:#F1F7F8;
+    --ink-soft:#A9BFC7;
+    --ink-faint:#7B959F;
+
+    --green-soft:#1F3A17;
+    --blue-soft:#12303F;
+    --orange-soft:#3B2A10;
+    --red-soft:#3B1B1B;
+    --purple-soft:#2E2140;
+    --yellow-soft:#3A3010;
+    --teal-soft:#0E3A34;
+
+    --green-ink:#8BE645;
+    --blue-ink:#7FD4FF;
+    --orange-ink:#FFB454;
+    --red-ink:#FF9090;
+    --purple-ink:#DEB6FF;
+    --teal-ink:#59E6CE;
+    --yellow-ink:#FFD84D;
+
+    --shadow-card:0 2px 0 rgba(0,0,0,.35);
+    --shadow-float:0 12px 32px rgba(0,0,0,.5);
+  }
 }
 
 @media (prefers-reduced-motion: reduce){
-  :root{ --dur:0s; }
+  :root{ --dur:0s; --dur-fast:0s; }
 }
