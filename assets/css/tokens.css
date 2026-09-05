@@ -1,0 +1,62 @@
+/* ─────────────────────────────────────────────
+   Mediterráneo — jetons de design
+   Palette : nuit méditerranéenne, sel, ambre valencien
+   ───────────────────────────────────────────── */
+:root{
+  /* fonds */
+  --abyss:#0A1D28;
+  --deep:#112D3D;
+  --surface:#17394C;
+
+  /* traits et textes */
+  --line:rgba(180,214,222,.16);
+  --line-strong:rgba(180,214,222,.3);
+  --salt:#E9F0F0;
+  --mist:#9CB4BE;
+  --mist-dim:rgba(156,180,190,.55);
+
+  /* accents */
+  --amber:#E8A33D;
+  --sea:#3BB0A0;
+  --coral:#E0685C;
+  --violet:#8E7BC4;
+
+  /* typographie */
+  --f-display:'Instrument Serif',Georgia,'Times New Roman',serif;
+  --f-body:'Outfit',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
+
+  --t-xs:11.5px;
+  --t-sm:12.5px;
+  --t-md:13.5px;
+  --t-lg:15px;
+  --t-xl:21px;
+  --t-2xl:33px;
+  --t-3xl:76px;
+
+  /* espacement */
+  --s-1:4px;
+  --s-2:8px;
+  --s-3:12px;
+  --s-4:16px;
+  --s-5:22px;
+  --s-6:30px;
+  --s-7:42px;
+
+  /* rayons */
+  --r-sm:7px;
+  --r-md:11px;
+  --r-lg:16px;
+  --r-xl:20px;
+
+  /* mouvement */
+  --ease:cubic-bezier(.4,0,.2,1);
+  --dur:.45s;
+
+  /* mise en page */
+  --rail:210px;
+  --measure:1180px;
+}
+
+@media (prefers-reduced-motion: reduce){
+  :root{ --dur:0s; }
+}
