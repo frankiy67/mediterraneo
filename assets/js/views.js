@@ -7,9 +7,11 @@ import {
   WEEK_PLAN, GYM_SESSION, MEAL_PLAN, SHOPPING, MEAL_TYPES
 } from './config.js';
 import {
-  getState, update, reset, today, mealsOn, waterOn, totalsOn,
-  weightSeries, movingAverage, BASELINE
+  getState, today, mealsOn, waterOn, totalsOn, weightSeries, movingAverage,
+  BASELINE, addMeal, removeMeal, setWaterFor, setWeightFor,
+  toggleSupplement, updateGoals, loadAll
 } from './store.js';
+import { signOut } from './data.js';
 import {
   esc, fr, clamp, ring, bar, lineChart, weightChart, longDate, toast
 } from './ui.js';
@@ -97,18 +99,15 @@ export const todayView = {
 
   mount(root) {
     root.querySelectorAll('[data-water]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const glasses = Number(btn.dataset.water);
-        update(s => {
-          s.water = s.water.filter(w => w.date !== today());
-          s.water.push({ date: today(), ml: glasses * 250 });
-        });
+      btn.addEventListener('click', async () => {
+        try { await setWaterFor(today(), Number(btn.dataset.water) * 250); }
+        catch { toast('Enregistrement impossible'); }
       });
     });
     root.querySelectorAll('[data-remove]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        update(s => { s.meals = s.meals.filter(m => m.id !== btn.dataset.remove); });
-        toast('Repas supprimé');
+      btn.addEventListener('click', async () => {
+        try { await removeMeal(btn.dataset.remove); toast('Repas supprimé'); }
+        catch { toast('Suppression impossible'); }
       });
     });
   }
@@ -167,34 +166,35 @@ export const journalView = {
   mount(root) {
     const val = id => Number(root.querySelector('#' + id).value) || 0;
 
-    root.querySelector('#saveMeal').addEventListener('click', () => {
+    root.querySelector('#saveMeal').addEventListener('click', async () => {
       const descField = root.querySelector('#f-desc');
       const desc = descField.value.trim();
       if (!desc) { descField.focus(); toast('Décris le repas avant de l\'enregistrer'); return; }
-      update(s => s.meals.push({
-        id: crypto.randomUUID(),
-        date: today(),
-        time: root.querySelector('#f-time').value || '12:00',
-        type: root.querySelector('#f-type').value,
-        desc,
-        kcal: val('f-kcal'), protein: val('f-protein'), carbs: val('f-carbs'),
-        fat: val('f-fat'), fiber: val('f-fiber'), sugar: val('f-sugar'), caffeine: val('f-caffeine')
-      }));
-      toast('Repas enregistré');
-      location.hash = '#/today';
+      try {
+        await addMeal({
+          date: today(),
+          time: root.querySelector('#f-time').value || '12:00',
+          type: root.querySelector('#f-type').value,
+          desc,
+          kcal: val('f-kcal'), protein: val('f-protein'), carbs: val('f-carbs'),
+          fat: val('f-fat'), fiber: val('f-fiber'), sugar: val('f-sugar'),
+          caffeine: val('f-caffeine')
+        });
+        toast('Repas enregistré');
+        location.hash = '#/today';
+      } catch { toast('Enregistrement impossible'); }
     });
 
-    root.querySelector('#saveWeight').addEventListener('click', () => {
+    root.querySelector('#saveWeight').addEventListener('click', async () => {
       const field = root.querySelector('#f-weight');
       const kg = Number(field.value);
       if (!kg) { field.focus(); toast('Indique un poids'); return; }
       const date = root.querySelector('#f-wdate').value || today();
-      update(s => {
-        s.weights = s.weights.filter(w => w.date !== date);
-        s.weights.push({ date, kg });
-      });
-      toast('Poids enregistré');
-      location.hash = '#/weight';
+      try {
+        await setWeightFor(date, kg);
+        toast('Poids enregistré');
+        location.hash = '#/weight';
+      } catch { toast('Enregistrement impossible'); }
     });
   }
 };
@@ -257,12 +257,9 @@ export const supplementsView = {
 
   mount(root) {
     root.querySelectorAll('[data-supp]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const key = btn.dataset.supp;
-        update(s => {
-          const day = s.supplements[today()] ||= {};
-          day[key] = !day[key];
-        });
+      btn.addEventListener('click', async () => {
+        try { await toggleSupplement(today(), btn.dataset.supp); }
+        catch { toast('Enregistrement impossible'); }
       });
     });
   }
@@ -507,17 +504,17 @@ export const settingsView = {
   },
 
   mount(root) {
-    root.querySelector('#saveGoals').addEventListener('click', () => {
+    root.querySelector('#saveGoals').addEventListener('click', async () => {
       const n = id => Number(root.querySelector('#' + id).value) || 0;
-      update(s => {
-        s.goals = {
+      try {
+        await updateGoals({
           kcal: n('g-kcal') || 2500, protein: n('g-protein') || 165,
           carbs: n('g-carbs') || 285, fat: n('g-fat') || 80,
           fiber: n('g-fiber') || 30, sugar: n('g-sugar') || 55,
           water: n('g-water') || 3000, targetWeight: n('g-target') || 80
-        };
-      });
-      toast('Objectifs enregistrés');
+        });
+        toast('Objectifs enregistrés');
+      } catch { toast('Enregistrement impossible'); }
     });
   }
 };
@@ -555,10 +552,11 @@ export const dataView = {
       <section class="card">
         <h3>Où vivent tes données</h3>
         <p class="sub">Ce que cette application fait, et ce qu'elle ne fait pas</p>
-        <p class="prose">Tout reste dans ton navigateur. Rien n'est envoyé sur un serveur, et aucun compte n'est nécessaire. Vider les données du site les efface définitivement, d'où l'intérêt d'exporter de temps en temps.</p>
-        <p class="prose">Cette application ne se connecte pas au serveur Nutrition MCP : une page ouverte dans un navigateur ne peut pas s'authentifier à ta place. Ce que tu dis à Claude est enregistré là-bas ; ce que tu saisis ici reste ici.</p>
+        <p class="prose">Tes données vivent dans ta base Supabase, à Francfort, rattachées à ton compte. Elles te suivent d'un appareil à l'autre et se mettent à jour en direct : une saisie sur ton téléphone apparaît sur ton ordinateur sans rien recharger.</p>
+        <p class="prose">La base ne renvoie que les lignes de ton compte, quelle que soit la requête. C'est ce qui rend la clé publique de l'application inoffensive.</p>
         <div class="actions" style="margin-top:16px">
-          <button class="act ghost" id="resetAll">Repartir des données d'origine</button>
+          <button class="act ghost" id="refreshAll">Recharger depuis le serveur</button>
+          <button class="act ghost" id="signOut">Se déconnecter</button>
         </div>
       </section>
     </div>`;
@@ -588,11 +586,13 @@ export const dataView = {
       });
     });
 
-    root.querySelector('#resetAll').addEventListener('click', () => {
-      if (confirm('Effacer tes saisies et repartir des données d\'origine ?')) {
-        reset();
-        toast('Données réinitialisées');
-      }
+    root.querySelector('#refreshAll').addEventListener('click', async () => {
+      await loadAll();
+      toast('Données rechargées');
+    });
+
+    root.querySelector('#signOut').addEventListener('click', async () => {
+      await signOut();
     });
   }
 };

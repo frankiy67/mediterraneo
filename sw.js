@@ -1,5 +1,5 @@
 /* Service worker : coquille applicative en cache, réseau en priorité pour le reste. */
-const CACHE = 'mediterraneo-v1';
+const CACHE = 'mediterraneo-v2';
 const SHELL = [
   './',
   './index.html',
@@ -11,6 +11,8 @@ const SHELL = [
   './assets/js/views.js',
   './assets/js/ui.js',
   './assets/js/config.js',
+  './assets/js/data.js',
+  './assets/js/auth.js',
   './assets/icons/icon.svg'
 ];
 
@@ -33,6 +35,8 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
   if (request.method !== 'GET') return;
+  // les données vivent sur Supabase : jamais de cache, toujours le réseau
+  if (request.url.includes('supabase.co') || request.url.includes('esm.sh')) return;
 
   event.respondWith(
     caches.match(request).then(cached => {

@@ -113,16 +113,6 @@ export const SHOPPING = [
   ['Épicerie', ['Huile d\'olive vierge extra','Amandes 200 g','Noix 200 g','Graines de chia 100 g','Beurre de cacahuète sans sucre','Houmous 1 pot','Paprika, cumin, herbes']]
 ];
 
-/** Repas déjà enregistrés au démarrage. */
-export const SEED_MEALS = [
-  { id: 'seed-1', date: PROFILE.startDate, time: '09:00', type: 'breakfast',
-    desc: 'Compléments du matin — multivitamine, vitamine C, collagène + magnésium, Articulaciones, oméga 3',
-    kcal: 10, protein: 0, carbs: 1, fat: 1, fiber: 0, sugar: 0, caffeine: 0, isSupplement: true },
-  { id: 'seed-2', date: PROFILE.startDate, time: '09:30', type: 'breakfast',
-    desc: "Petit-déj chez Doux-Amer — 2 pancakes au sirop d'érable, 2 tranches de bacon, 2 œufs au plat, grand cappuccino",
-    kcal: 795, protein: 31, carbs: 84, fat: 37, fiber: 1, sugar: 55, caffeine: 125 }
-];
-
 export const MEAL_TYPES = {
   breakfast: 'Petit-déjeuner',
   lunch: 'Déjeuner',

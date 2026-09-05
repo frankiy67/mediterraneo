@@ -1,10 +1,10 @@
 /**
- * Magasin d'état.
- * Source unique de vérité, persistée localement, avec notification des vues.
+ * Magasin d'état, adossé à Supabase.
+ * L'état en mémoire est un miroir de la base : toute écriture part au serveur,
+ * puis l'état local est mis à jour et les vues notifiées.
  */
-import { DEFAULT_GOALS, PROFILE, SEED_MEALS } from './config.js';
-
-const KEY = 'mediterraneo:v1';
+import { DEFAULT_GOALS, PROFILE } from './config.js';
+import * as db from './data.js';
 
 /** Historique de référence, pour que les courbes soient lisibles dès le premier jour. */
 function buildBaseline() {
@@ -14,11 +14,10 @@ function buildBaseline() {
   for (let i = 29; i >= 0; i--) {
     const d = new Date(end);
     d.setDate(d.getDate() - i);
-    const iso = d.toISOString().slice(0, 10);
     const dow = d.getDay();
     const weekend = dow === 0 || dow === 6;
     out.push({
-      date: iso,
+      date: d.toISOString().slice(0, 10),
       dow,
       kcal: Math.round(2380 + (weekend ? 430 : 0) + Math.sin(i * 1.7) * 210 + (i % 5 === 0 ? -260 : 0)),
       protein: Math.round(138 + Math.cos(i * 1.1) * 22 + (weekend ? -16 : 0)),
@@ -32,71 +31,93 @@ function buildBaseline() {
 
 export const BASELINE = buildBaseline();
 
-function initialState() {
-  return {
-    goals: { ...DEFAULT_GOALS },
-    meals: SEED_MEALS.map(m => ({ ...m })),
-    water: [{ date: PROFILE.startDate, ml: 1000 }],
-    weights: [{ date: PROFILE.startDate, kg: PROFILE.startWeight }],
-    supplements: {
-      [PROFILE.startDate]: { multi: true, vitc: true, colmag: true, artic: true, omega: true }
-    }
-  };
-}
+let state = {
+  user: null,
+  ready: false,
+  syncing: false,
+  goals: { ...DEFAULT_GOALS },
+  meals: [],
+  water: [],
+  weights: [],
+  supplements: {}
+};
 
-let state = initialState();
 const listeners = new Set();
 
-/* ── persistance ─────────────────────────────── */
-
-function readStorage() {
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
-
-function writeStorage(value) {
-  try { window.localStorage.setItem(KEY, JSON.stringify(value)); }
-  catch { /* mode privé ou quota atteint : on reste en mémoire */ }
-}
-
-export function hydrate() {
-  const saved = readStorage();
-  if (saved && saved.goals && Array.isArray(saved.meals)) {
-    state = { ...initialState(), ...saved };
-  }
-  return state;
-}
-
-/* ── lecture et écriture ─────────────────────── */
-
 export const getState = () => state;
+export const today = () => new Date().toISOString().slice(0, 10);
 
 export function subscribe(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);
 }
 
-function commit(next) {
-  state = next;
-  writeStorage(state);
-  listeners.forEach(fn => fn(state));
+function emit() { listeners.forEach(fn => fn(state)); }
+
+function patch(partial) {
+  state = { ...state, ...partial };
+  emit();
 }
 
-export function update(mutator) {
-  const draft = structuredClone(state);
-  mutator(draft);
-  commit(draft);
+/* ── chargement ──────────────────────────────── */
+
+export async function loadAll() {
+  if (!state.user) return;
+  patch({ syncing: true });
+  const uid = state.user.id;
+  try {
+    const [goals, meals, water, weights, supplements] = await Promise.all([
+      db.fetchGoals(uid), db.fetchMeals(uid), db.fetchWater(uid),
+      db.fetchWeights(uid), db.fetchSupplements(uid)
+    ]);
+    patch({ goals, meals, water, weights, supplements, ready: true, syncing: false });
+  } catch (e) {
+    console.error('Chargement impossible', e);
+    patch({ syncing: false, ready: true });
+  }
 }
 
-export function reset() {
-  commit(initialState());
+export function setUser(user) {
+  patch({ user, ready: !user });
+  if (user) loadAll();
+  else patch({ goals: { ...DEFAULT_GOALS }, meals: [], water: [], weights: [], supplements: {} });
+}
+
+/* ── écritures ───────────────────────────────── */
+
+export async function addMeal(meal) {
+  const saved = await db.insertMeal(state.user.id, meal);
+  patch({ meals: [...state.meals, saved] });
+}
+
+export async function removeMeal(id) {
+  await db.deleteMeal(id);
+  patch({ meals: state.meals.filter(m => m.id !== id) });
+}
+
+export async function setWaterFor(date, ml) {
+  await db.setWater(state.user.id, date, ml);
+  patch({ water: [...state.water.filter(w => w.date !== date), { date, ml }] });
+}
+
+export async function setWeightFor(date, kg) {
+  await db.setWeight(state.user.id, date, kg);
+  patch({ weights: [...state.weights.filter(w => w.date !== date), { date, kg }] });
+}
+
+export async function toggleSupplement(date, key) {
+  const current = state.supplements[date]?.[key] ?? false;
+  await db.setSupplement(state.user.id, date, key, !current);
+  const supplements = { ...state.supplements, [date]: { ...state.supplements[date], [key]: !current } };
+  patch({ supplements });
+}
+
+export async function updateGoals(goals) {
+  await db.saveGoals(state.user.id, goals);
+  patch({ goals });
 }
 
 /* ── sélecteurs ──────────────────────────────── */
-
-export const today = () => PROFILE.startDate;
 
 export const mealsOn = date => state.meals.filter(m => m.date === date);
 
@@ -105,9 +126,8 @@ export const waterOn = date =>
 
 export function totalsOn(date) {
   const keys = ['kcal', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'caffeine'];
-  const meals = mealsOn(date);
   const out = Object.fromEntries(keys.map(k => [k, 0]));
-  for (const m of meals) for (const k of keys) out[k] += Number(m[k]) || 0;
+  for (const m of mealsOn(date)) for (const k of keys) out[k] += Number(m[k]) || 0;
   return out;
 }
 

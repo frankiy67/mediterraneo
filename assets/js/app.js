@@ -1,8 +1,10 @@
 /**
- * Point d'entrée : routage par ancre, rendu et amorçage.
+ * Point d'entrée : authentification, routage par ancre, synchronisation.
  */
-import { hydrate, subscribe } from './store.js';
+import { getState, subscribe, setUser, today } from './store.js';
+import { currentUser, onAuthChange, subscribeRealtime } from './data.js';
 import { PROFILE } from './config.js';
+import { authView } from './auth.js';
 import {
   todayView, journalView, supplementsView, trendsView,
   weightView, trainingView, planView, settingsView, dataView
@@ -22,6 +24,9 @@ const ROUTES = {
 
 const DEFAULT_ROUTE = 'today';
 const main = document.getElementById('main');
+const shell = document.querySelector('.shell');
+
+let unsubscribeRealtime = null;
 
 function currentRoute() {
   const name = location.hash.replace(/^#\//, '');
@@ -29,9 +34,26 @@ function currentRoute() {
 }
 
 function render() {
+  const { user, ready } = getState();
+
+  // non connecté : écran d'authentification plein cadre
+  if (!user) {
+    shell.classList.add('signed-out');
+    main.innerHTML = authView.render();
+    authView.mount(main);
+    document.title = 'Mediterráneo';
+    return;
+  }
+
+  shell.classList.remove('signed-out');
+
+  if (!ready) {
+    main.innerHTML = '<p class="empty" style="padding:60px 0">Chargement de tes données…</p>';
+    return;
+  }
+
   const name = currentRoute();
   const view = ROUTES[name];
-
   main.innerHTML = view.render();
   view.mount?.(main);
 
@@ -43,9 +65,21 @@ function render() {
   document.title = `Mediterráneo — ${name}`;
 }
 
-function boot() {
-  hydrate();
+function handleUser(user) {
+  setUser(user);
 
+  unsubscribeRealtime?.();
+  unsubscribeRealtime = null;
+
+  if (user) {
+    // une saisie faite sur un autre appareil rafraîchit celui-ci
+    unsubscribeRealtime = subscribeRealtime(user.id, () => {
+      import('./store.js').then(m => m.loadAll());
+    });
+  }
+}
+
+async function boot() {
   const sub = document.getElementById('brandSub');
   if (sub) sub.textContent = `${PROFILE.city} · ${PROFILE.startWeight} → 80 kg`;
 
@@ -55,17 +89,17 @@ function boot() {
     window.scrollTo({ top: 0 });
   });
 
-  window.addEventListener('rerender', render);
   subscribe(render);
+  onAuthChange(handleUser);
+
+  handleUser(await currentUser());
 
   if (!location.hash) location.hash = '#/' + DEFAULT_ROUTE;
   render();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {
-        /* hors ligne indisponible : l'application fonctionne quand même */
-      });
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
     });
   }
 }

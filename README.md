@@ -1,8 +1,8 @@
 # Mediterráneo
 
-Application de suivi nutrition, poids et entraînement. Sans dépendance, sans build,
-sans serveur. Conçue pour un objectif précis : perdre le gras en gardant le muscle,
-avec neuf heures de sport par semaine.
+Application de suivi nutrition, poids et entraînement. Sans build, adossée à Supabase
+pour l'authentification et la synchronisation entre appareils. Conçue pour un objectif
+précis : perdre le gras en gardant le muscle, avec neuf heures de sport par semaine.
 
 Site statique prêt pour GitHub Pages. Installable sur téléphone.
 
@@ -72,7 +72,9 @@ Puis `http://localhost:8000`.
 │   │   └── app.css             composants et mise en page
 │   ├── js/
 │   │   ├── config.js           profil, objectifs, compléments, menus
-│   │   ├── store.js            état, persistance, sélecteurs
+│   │   ├── data.js             client Supabase, requêtes, temps réel
+│   │   ├── auth.js             écran de connexion
+│   │   ├── store.js            état, écritures, sélecteurs
 │   │   ├── ui.js               formatage et graphiques SVG
 │   │   ├── views.js            écrans
 │   │   └── app.js              routeur et amorçage
@@ -82,16 +84,24 @@ Puis `http://localhost:8000`.
 
 ### Choix techniques
 
-**Aucune dépendance.** Pas de framework, pas d'étape de compilation, pas de
-`node_modules`. Le code envoyé est le code exécuté, ce qui supprime toute
-maintenance de chaîne de build et toute alerte de vulnérabilité transitive.
+**Pas d'étape de build.** Pas de framework, pas de `node_modules`. La seule
+dépendance, `supabase-js`, est importée en module ES depuis un CDN. Le code
+envoyé est le code exécuté.
 
 **Graphiques faits main.** Les courbes sont du SVG généré à partir des données.
 Une bibliothèque de graphiques pèserait plus lourd que l'application entière.
 
-**État centralisé.** `store.js` détient la seule source de vérité, persiste dans
-`localStorage` et notifie les vues. Les vues ne modifient jamais l'état
-directement : elles passent par `update()`.
+**État centralisé.** `store.js` détient l'état en mémoire, miroir de la base.
+Toute écriture part d'abord au serveur, puis met à jour l'état et notifie les vues.
+Les vues n'écrivent jamais directement dans l'état.
+
+**Sécurité par la base.** La clé publique de l'application ne donne aucun accès :
+le Row Level Security filtre chaque requête sur `auth.uid()`, donc la base ne
+renvoie que les lignes du compte connecté. C'est pour cela qu'elle peut vivre
+dans du code public.
+
+**Synchronisation en direct.** Un abonnement `postgres_changes` recharge les
+données dès qu'une modification arrive, y compris depuis un autre appareil.
 
 **Échappement systématique.** Toute donnée saisie traverse `esc()` avant d'être
 insérée dans le DOM.
@@ -113,14 +123,29 @@ Les couleurs et la typographie vivent dans `assets/css/tokens.css`.
 
 ## Données
 
-Tout reste dans le navigateur, dans `localStorage`. Rien n'est envoyé nulle part,
-aucun compte n'est requis, aucun traqueur n'est chargé. Vider les données du site
-les efface définitivement : l'écran **Données** permet d'exporter en CSV avant.
+Les données vivent dans une base Postgres hébergée par Supabase, en Europe
+(Francfort), rattachées à un compte. Elles sont accessibles depuis tous les
+appareils connectés au même compte et se mettent à jour en direct.
 
-Cette application ne se connecte pas au serveur Nutrition MCP. Une page ouverte
-dans un navigateur ne peut pas s'authentifier à ta place auprès de ce service.
-Les deux outils coexistent : le MCP conserve l'historique de référence, cette
-application offre l'interface.
+Le Row Level Security garantit qu'un compte ne peut lire ou écrire que ses
+propres lignes, indépendamment de la requête envoyée. Aucun traqueur n'est chargé.
+L'écran **Données** permet d'exporter en CSV à tout moment.
+
+### Schéma
+
+Cinq tables — `goals`, `meals`, `water`, `weights`, `supplements` — toutes avec
+RLS activé et une politique restreignant l'accès à `auth.uid() = user_id`.
+Un déclencheur crée les objectifs par défaut à l'inscription.
+
+### Configuration
+
+L'URL du projet et la clé anonyme se trouvent en tête de `assets/js/data.js`.
+Ces deux valeurs sont conçues pour être publiques. La clé `service_role` ne doit
+jamais figurer dans ce dépôt.
+
+Cette application ne se connecte pas au serveur Nutrition MCP. Les deux outils
+coexistent : le MCP conserve l'historique tenu par Claude, cette application offre
+l'interface et la saisie directe.
 
 ---
 
