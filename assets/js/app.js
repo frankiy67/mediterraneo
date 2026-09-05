@@ -9,9 +9,11 @@ import {
   todayView, journalView, supplementsView, trendsView,
   weightView, trainingView, planView, settingsView, dataView
 } from './views.js';
+import { photoView } from './photo.js';
 
 const ROUTES = {
   today: todayView,
+  photo: photoView,
   journal: journalView,
   supplements: supplementsView,
   trends: trendsView,

@@ -6,7 +6,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { DEFAULT_GOALS } from './config.js';
 
-const SUPABASE_URL = 'https://dwxduynqotbevyzmzddn.supabase.co';
+export const SUPABASE_URL = 'https://dwxduynqotbevyzmzddn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3eGR1eW5xb3RiZXZ5em16ZGRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2MTEyNzMsImV4cCI6MjEwNDE4NzI3M30.CEQ31TLsKeKLfhVmCSkDvNHl0rh2VaJq_iZkDvi_cT0';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

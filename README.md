@@ -74,6 +74,7 @@ Puis `http://localhost:8000`.
 │   │   ├── config.js           profil, objectifs, compléments, menus
 │   │   ├── data.js             client Supabase, requêtes, temps réel
 │   │   ├── auth.js             écran de connexion
+│   │   ├── photo.js            capture et analyse de photo
 │   │   ├── store.js            état, écritures, sélecteurs
 │   │   ├── ui.js               formatage et graphiques SVG
 │   │   ├── views.js            écrans
@@ -161,3 +162,34 @@ en cours, l'avis d'un médecin ou d'un diététicien reste nécessaire.
 ## Licence
 
 MIT — voir `LICENSE`.
+
+
+---
+
+## Analyse de photo de repas
+
+Le module Photo capture une image, l'envoie à une Edge Function Supabase, et
+propose une estimation nutritionnelle à valider avant enregistrement.
+
+### Pourquoi une fonction serveur
+
+La clé d'API du modèle ne peut pas vivre dans le code envoyé au navigateur : il
+est public. Elle est stockée dans les secrets du projet Supabase, et seule la
+fonction y accède. La fonction vérifie en plus que l'appelant est authentifié,
+pour qu'un tiers ne puisse pas consommer le crédit.
+
+### Déploiement
+
+```bash
+supabase functions deploy analyze-meal
+```
+
+Le secret `ANTHROPIC_API_KEY` doit être défini au préalable dans
+Project Settings → Edge Functions → Secrets.
+
+### Principe de conception
+
+L'estimation n'est jamais écrite directement en base. Elle est affichée avec un
+niveau de confiance, d'éventuelles questions sur ce qui reste incertain, et tous
+les champs modifiables. Une valeur corrigée par l'utilisateur vaut mieux qu'une
+valeur exacte imposée — et les portions restent la principale source d'erreur.
