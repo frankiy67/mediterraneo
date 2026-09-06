@@ -9,7 +9,7 @@ import { PROFILE } from './config.js';
  * Valeurs issues du Compendium of Physical Activities, arrondies.
  */
 export const ACTIVITIES = [
-  { kind: 'volley',   label: 'Volley',        emoji: '🏐', met: 6.0,  minutes: 90 },
+  { kind: 'volley',   label: 'Volley',        emoji: '🏐', met: 4.5,  minutes: 90 },
   { kind: 'gym',      label: 'Musculation',   emoji: '🏋️', met: 5.0,  minutes: 60 },
   { kind: 'run',      label: 'Course',        emoji: '🏃', met: 9.8,  minutes: 40 },
   { kind: 'bike',     label: 'Vélo',          emoji: '🚴', met: 7.5,  minutes: 60 },
@@ -32,9 +32,12 @@ export function bmr(weightKg) {
 
 /**
  * Dépense hors sport : métabolisme de base plus la vie courante.
- * Le sport est compté à part, séance par séance.
+ * Le sport étant compté à part, séance par séance, ce facteur ne couvre que
+ * le reste — se lever, marcher, cuisiner. Un facteur d'activité classique
+ * (1,35 et au-delà) inclut déjà l'entraînement : l'appliquer ici compterait
+ * le sport deux fois.
  */
-export const NEAT_FACTOR = 1.35;
+export const NEAT_FACTOR = 1.15;
 
 export const baseBurn = weightKg => Math.round(bmr(weightKg) * NEAT_FACTOR);
 

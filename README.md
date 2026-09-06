@@ -54,8 +54,9 @@ consécutifs, et des confettis quand la journée est parfaite. Ce qui fait reven
 Deux morceaux, additionnés :
 
 **La dépense de base** — métabolisme au repos par la formule de Mifflin-St Jeor
-(`10 × poids + 6,25 × taille − 5 × âge + 5`), multipliée par 1,35 pour la vie
-courante hors sport.
+(`10 × poids + 6,25 × taille − 5 × âge + 5`), multipliée par 1,15 pour la vie
+courante — se lever, marcher, cuisiner. Le sport étant compté à part, séance par
+séance, un facteur d'activité classique le compterait deux fois.
 
 **Le sport, séance par séance** — la formule MET, celle des montres connectées :
 
@@ -64,7 +65,7 @@ kcal = MET × 3,5 × poids(kg) ÷ 200 × minutes
 ```
 
 Le MET mesure l'intensité d'une activité par rapport au repos : 1 assis, 3,5 en
-marchant, 6 au volley, 9,8 en courant. Les valeurs viennent du *Compendium of
+marchant, 4,5 au volley de loisir, 9,8 en courant. Les valeurs viennent du *Compendium of
 Physical Activities* et vivent dans `assets/js/energy.js`. L'écran Entraînement
 affiche ce que vaut une heure de chaque activité pour ton poids du moment.
 
