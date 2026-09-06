@@ -108,7 +108,7 @@ export const settingsView = {
         <div class="row-item"><div class="body"><b>Métabolisme de base</b>
           <em>${fr.format(bmr(kg))} kcal — ${PROFILE.age} ans, ${(PROFILE.heightCm / 100).toFixed(2)} m, ${kg} kg (Mifflin-St Jeor)</em></div></div>
         <div class="row-item"><div class="body"><b>Dépense hors sport</b>
-          <em>${fr.format(baseBurn(kg))} kcal — métabolisme × 1,35 pour la vie courante</em></div></div>
+          <em>${fr.format(baseBurn(kg))} kcal — métabolisme × 1,15 pour la vie courante, sport exclu</em></div></div>
         <div class="row-item"><div class="body"><b>Sport</b>
           <em>Compté séance par séance : MET × 3,5 × poids ÷ 200 × minutes</em></div></div>
         <div class="row-item"><div class="body"><b>Déficit retenu</b>

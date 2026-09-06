@@ -42,7 +42,7 @@ export function sportPicker(date, { title = '🔥 Quel sport as-tu fait ?' } = {
     <p class="prose" data-estimate></p>
     <div class="actions"><button class="btn wide" data-add-session>${icon.plus} Enregistrer la séance</button></div>
     <p class="note">Estimation par la formule MET : <b>MET × 3,5 × ${kg} kg ÷ 200 × minutes</b>.
-    Le MET mesure l'intensité d'une activité — 1 au repos, 6 au volley, 9,8 en course.
+    Le MET mesure l'intensité d'une activité — 1 au repos, 4,5 au volley de loisir, 9,8 en course.
     C'est une estimation : corrige la valeur si ta montre dit autre chose.</p>
   </section>`;
 }

@@ -49,7 +49,7 @@ export const trainingView = {
     <div class="grid g3 tight mb">
       <section class="card"><h3>Prévu</h3><p class="kpi">${Math.round(plannedMinutes / 60)}<small>h / semaine</small></p><p class="delta flat">Six séances</p></section>
       <section class="card"><h3>Fait cette semaine</h3><p class="kpi">${Math.round(doneMinutes / 60 * 10) / 10}<small>h</small></p><p class="delta ${doneMinutes ? 'down' : 'flat'}">${fr.format(doneKcal)} kcal brûlées</p></section>
-      <section class="card"><h3>Dépense de base</h3><p class="kpi">${fr.format(baseBurn(kg))}<small>kcal / jour</small></p><p class="delta flat">Métabolisme ${fr.format(bmr(kg))} × 1,35</p></section>
+      <section class="card"><h3>Dépense de base</h3><p class="kpi">${fr.format(baseBurn(kg))}<small>kcal / jour</small></p><p class="delta flat">Métabolisme ${fr.format(bmr(kg))} × 1,15</p></section>
     </div>
 
     <section class="card mb">
